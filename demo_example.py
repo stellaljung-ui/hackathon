@@ -5,7 +5,8 @@ from air import DistillerClient
  
 # Load API key from .env
 load_dotenv()
-api_key = str(os.getenv("API_KEY"))
+# api_key = str(os.getenv("API_KEY"))
+api_key = "lHCGLxlJHe3njJWyTTr6KJ23spdY4csy-zeoJzXxHrY="
  
 # Define custom agents
 async def search_agent(query: str) -> str:
