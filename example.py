@@ -4,9 +4,9 @@ import os
 from air import AsyncAIRefinery, DistillerClient
 from dotenv import load_dotenv
 
-# Load the API Key
 load_dotenv() # loads your API_KEY from your local '.env' file
 api_key=str(os.getenv("API_KEY"))
+
 
 async def simple_agent(query: str):
     """
@@ -30,7 +30,7 @@ async def quickstart_demo():
     distiller_client = DistillerClient(api_key=api_key)
 
     # Validate your configuration file before creating the project
-    is_config_valid = distiller_client.validate_config(config_path="refinery.yaml")
+    is_config_valid = distiller_client.validate_config(config_path="example.yaml")
 
     if not is_config_valid:
         # Abort if validation fails to avoid creating an invalid project
@@ -38,7 +38,7 @@ async def quickstart_demo():
         return
 
     # upload your config file to register a new distiller project
-    distiller_client.create_project(config_path="refinery.yaml", project="demo") 
+    distiller_client.create_project(config_path="example.yaml", project="example") 
 
     # Define a mapping between your custom agent to Callable.
     # When the custom agent is summoned by the super agent / orchestrator,
@@ -50,7 +50,7 @@ async def quickstart_demo():
 
     # connect to the created project
     async with distiller_client(
-        project="demo",
+        project="example",
         uuid="test_user",
         executor_dict=executor_dict
     ) as dc:
