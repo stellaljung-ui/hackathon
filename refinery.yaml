@@ -1,0 +1,15 @@
+orchestrator:   
+  agent_list:   
+    # List of agents available in the orchestrator. Each agent must be configure under utility_agents below. 
+    - agent_name: "Data Scientist Agent"  
+    - agent_name: "Search Agent"           
+
+utility_agents:   
+  - agent_class: CustomAgent  
+    agent_name: "Data Scientist Agent"  
+    agent_description: "An agent for generating synthetic data."  # Description of the Data Scientist Agent  
+    config: {}  # Configuration details for the Data Scientist Agent  
+
+  - agent_class: SearchAgent  
+    agent_name: "Search Agent"  
+    # Configuration and description for Search Agent can be added here
