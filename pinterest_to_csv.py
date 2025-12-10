@@ -6,7 +6,7 @@ import unicodedata
 from pathlib import Path
 
 # Input/Output files (same directory as this script)
-INPUT_FILE = Path(__file__).with_name("pinterest.txt")
+INPUT_FILE = Path(__file__).with_name("pinterest_updated.txt")
 OUTPUT_FILE = Path(__file__).with_name("pins.csv")
 
 # ---- Emoji handling ----
@@ -165,32 +165,15 @@ def parse_story_pin_media(s: str) -> str:
 def normalize_field_name(name: str):
     """Map raw label to CSV column name."""
     mapping = {
-        "url": "url",
         "title": "title",
         "details": "details",
-        "image": "image",
-        "is native": "is_native",
-        "board id": "board_id",
         "board name": "board_name",
-        "is video": "is_video",
-        "ip address": "ip_address",
-        "username": "username",
-        "alt text": "alt_text",
-        "canonical link": "canonical_link",
-        "story pin media": "story_pin_media",
-        "video": "video",
         "created at": "created_at",
         "alive": "alive",
-        "is a repin": "is_a_repin",
-        "private": "private",
     }
     return mapping.get(name.lower().strip())
 
-CSV_FIELDS = [
-    "url","title","details","image","is_native","board_id","board_name","is_video",
-    "ip_address","username","alt_text","canonical_link","story_pin_media","video",
-    "created_at","alive","is_a_repin","private"
-]
+CSV_FIELDS = ["title", "details", "board_name", "created_at", "alive"]
 
 # ---- Read source text ----
 if not INPUT_FILE.exists():
@@ -202,19 +185,19 @@ with open(INPUT_FILE, "r", encoding="utf-8") as f:
 records = []
 current = {f: "NA" for f in CSV_FIELDS}  # default NA for all fields
 
+def has_data(rec: dict) -> bool:
+    """Does this record have any non-NA field?"""
+    return any((rec.get(k) or "NA") != "NA" for k in CSV_FIELDS)
+
 # ---- Parse ----
 for raw in lines:
     line = raw.strip()
-    if not line:
-        continue
 
-    # URL line starts a new record
-    if line.startswith("http://") or line.startswith("https://"):
-        # Push previous record if it exists (has a URL)
-        if current.get("url") and current["url"] != "NA":
+    # Blank line = record boundary (if something accumulated)
+    if not line:
+        if has_data(current):
             records.append(current)
             current = {f: "NA" for f in CSV_FIELDS}
-        current["url"] = sanitize_value(line)
         continue
 
     # Parse "Key: Value"
@@ -224,17 +207,28 @@ for raw in lines:
         val = val.strip()
         csv_key = normalize_field_name(key)
         if not csv_key:
+            # Unknown key: ignore
             continue
 
-        if csv_key in ("is_native", "is_video", "alive", "is_a_repin", "private"):
+        # If a new Title starts but we already have data, flush previous record first
+        if csv_key == "title" and has_data(current):
+            records.append(current)
+            current = {f: "NA" for f in CSV_FIELDS}
+
+        if csv_key == "alive":
             current[csv_key] = parse_bool(val)
         elif csv_key == "story_pin_media":
             current[csv_key] = parse_story_pin_media(val)
         else:
             current[csv_key] = sanitize_value(val)
 
-# Push the final record if it has a URL
-if current.get("url") and current["url"] != "NA":
+    else:
+        # Non "Key: Value" line — treat as continuation of Details if Details already started
+        if current["details"] != "NA":
+            current["details"] = sanitize_value(f"{current['details']} {line}")
+
+# Push the final record if anything is present
+if has_data(current):
     records.append(current)
 
 # ---- Write CSV ----
@@ -243,7 +237,8 @@ with open(OUTPUT_FILE, "w", newline="", encoding="utf-8") as f:
     writer.writeheader()
     for rec in records:
         safe = {}
-        for k, v in rec.items():
+        for k in CSV_FIELDS:
+            v = rec.get(k, "NA")
             val = v if isinstance(v, str) else ("" if v is None else str(v))
             # Final safety: emoji → space, strip trailing commas, remove commas, NA if empty
             val = replace_emojis_with_space(val)
