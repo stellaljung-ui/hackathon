@@ -1,0 +1,20 @@
+orchestrator:   
+  agent_list:   
+    # List of agents available in the orchestrator. Each agent must be configure under utility_agents below. 
+    - agent_name: "Cosine Matcher Agent"  ## Custom Finder Agent
+
+utility_agents:   
+  - agent_class: CustomAgent  
+    agent_name: "Cosine Matcher Agent"  
+    agent_description: "Compute cosine similarity between pinterest.csv and cosmic_mart.csv using embeddings."
+    config: {
+      pinterest_csv_path: "data/pins.csv",                              # pinterest data
+      cosmic_mart_csv_path: "data/cosmicmart_generic_products_600.csv", # cosmic mart data
+      pinterest_text_cols: ["title", "details"],                        # chosen pinterest columns
+      cosmic_text_cols: ["title", "category", "details", "material"],   # chosen cosmic columns
+      embedding_model: "intfloat/e5-mistral-7b-instruct",
+      top_k: 10,                                                        # num of results                          
+      similarity_threshold: 0.25,                                       # ??
+      output_csv_path: "pin_to_sku_matches.csv",
+      output_json_path: "matches.json",
+    } 
